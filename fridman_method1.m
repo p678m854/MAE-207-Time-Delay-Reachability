@@ -1,28 +1,29 @@
-function [P, F, tmin, xfeas]= fridman_method1(A, Ad, B, h, ut, ...
+function [P, F, delta, tmin, xfeas]= fridman_method1(A, Ad, B, h, ut, ...
                                lambda, gamma_0, gamma_1, gamma_2, gamma_3) 
 
 % FRIDMAN_SHAKED_METHOD1
 % 
-% Usage: [P, F, lambda, gamma_0, gamma_1, gamma_2, gamma_3] 
-%       = fridman_shaked_method1(A, Ad, B, h, ut)
+% Usage: [P, F, delta, tmin, xfeas]= fridman_method1(A, Ad, B, h, ut, ...
+%                              lambda, gamma_0, gamma_1, gamma_2, gamma_3)
 % 
 % Description: 
 % 
 %     d/dt(x) = Ax + Ad x(t - tau(t)) + B u
 % 
-% Intputs:  - Matrix A
-%           - Matrix Ad
-%           - Matrix B
-%           - Scalar w
-%           - Scalar h
+% Intputs:  - Matrix A        nxn
+%           - Matrix Ad       nxn
+%           - Matrix B        nxp
+%           - Scalar h        1x1
+%           - Scalar ut       1x1
+%           - Scalar lambda   1x1
+%           - Scalar gamma_0  1x1
+%           - Scalar gamma_1  1x1
+%           - Scalar gamma_2  1x1
+%           - Scalar gamma_3  1x1
 %           
-% Outputs:  - Matrix P
-%           - Matrix F
-%           - Scalar lambda
-%           - Scalar gamma_0
-%           - Scalar gamma_1
-%           - Scalar gamma_2
-%           - Scalar gamma_3
+% Outputs:  - Matrix P        nxn
+%           - Matrix F        nxn
+%           - Scalar delta    nxn
 % 
 % Authors:
 %     Florian Oberneder
@@ -50,7 +51,7 @@ setlmis([]);
 % LMI-variables
 P = lmivar(1,[n 1]); 
 W = lmivar(2,[n n]); % W = P*F
-delta = lmivar(1,[n, 0]);
+delta = lmivar(1,[1 0]);
 
 % Other constants
 I = eye(p,p);
@@ -77,7 +78,7 @@ lmiterm([1 1 4 W],h,A)
 lmiterm([1 1 5 W],h,Ad)
 lmiterm([1 1 6 W],h,B)
 
-% LMI I Lower Entries
+% LMI 1 Lower Entries
 lmiterm([1 2 1 P],B',1)
 lmiterm([1 3 1 P],Ad',1)
 lmiterm([1 3 1 W],-1,1)
@@ -96,8 +97,12 @@ lmiterm([-2 2 2 P],1,1)
 lmis = getlmis;
 
 %% Solving the LMI
+
 [tmin,xfeas] = feasp(lmis);
 
 %% Postprocessing
+P = dec2mat(lmis,xfeas,P);
+W = dec2mat(lmis,xfeas,W);
+delta = dec2mat(lmis,xfeas,delta);
 F = P\W;
 end
