@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 function [beta0] = trinh_method1(A, Ad, B, ...
                             E,...
                             tau_m, tau_M,...
@@ -73,6 +72,7 @@ n = size(A, 1);
 p = size(B, 2);
 
 %% Constants
+Ac = [A, Ad, zeros(n,5*n), B]';
 Gamma1 = ...
     [ei_generator(n,p,1) - ei_generator(n,p,3);...
      sqrt(3)*(ei_generator(n,p,1) + ...
@@ -92,21 +92,46 @@ Gamma2 = ...
 
 mu0 = min(eig(E));
 
+
+%% Linear Matrix Inequality Solving
+% TODO: use gevp from MATLAB's robust control toolbox.
+
+
+end
+
+%% LMI Solving
+function [] = lmi_portion(...
+    alpha,...
+    beta0, beta1, beta2, beta3, beta4, ...
+    q1, q2, q3,...
+    r1, r2)
+%
+% Usage: [] = lmi_portion(alpha, beta0, beta1, beta2, beta3, beta4, q1, q2, ...
+%     q3, r1, r2)
+% 
+% Description: Internal loop that given 11 scalar values solves an LMI.
+% 
+% Input:
+%     alpha = parameter associated with Lyapunov-Krasovskii stability.
+%     beta0 = radius of the bounding ball
+%     beta1 = 
+%     beta2 = 
+%     beta3 = 
+%     beta4 = 
+%     q1    = parameter associated with control of Q1 matrix variable
+%     q2    = parameter associated with control of Q2 matrix variable
+%     q3    = parameter associated with control of Q3 matrix variable
+%     r1    = parameter associated with control of R1 matrix variable
+%     r2    = parameter associated with control of R2 matrix variable
+% 
+% Output:
+
 %% Linear Matrix Inequality Variable Setup
 setlmis([]);  % initialize the linear matrix inequality setup
 
-% Scalar variables
-alpha;
-beta0 = lmivar(1, [1,0]);
-[beta1, ~, sbeta1] = lmivar(1, [1, 0]);
-[beta2, ~, sbeta2] = lmivar(1, [1, 0]);
-[beta3, ~, sbeta3] = lmivar(1, [1, 0]);
-[beta4, ~, sbeta4] = lmivar(1, [1, 0]);
-q1 = lmivar(1, [1, 0]);  % Scalar
-q2 = lmivar(1, [1, 0]);
-q3 = lmivar(1, [1, 0]);
-r1 = lmivar(1, [1, 0]);
-r2 = lmivar(1, [1, 0]);
+% Matrix constants
+beta12 = [beta1*eye(n), zeros(n); zeros(n), beta2*eye(n)];
+beta34 = [beta3*eye(n), zeros(n); zeros(n), beta4*eye(n)];
 
 % Matrix variables
 Q1 = lmivar(1, [n, 1]);  % Symmetric nxn matrix of full elements
@@ -122,41 +147,140 @@ P22 = lmivar(1, [2*n, 1]);  % 2n x 2n symmetric
 
 
 % Constructed Matrix Variables
-beta12 = lmivar(3,[sbeta1*eye(n), zeros(n); zeros(n), sbeta2*eye(n)]);
-beta34 = lmivar(3,[sbeta3*eye(n), zeros(n); zeros(n), sbeta4*eye(n)]);
-R1tilde = lmivar(3, [sR1, zeros(n); zeros(n) sR1]);
-R2tilde = lmivar(3, [sR2, zeros(n); zeros(n) sR2]);
-
+[R1tilde, ~, sR1tilde] = lmivar(3, [sR1, zeros(n); zeros(n) sR1]);
+[R2tilde, ~, sR2tilde] = lmivar(3, [sR2, zeros(n); zeros(n) sR2]);
+Theta = lmivar(3, [sR2tilde, sX; sX', sR2tilde]);
 
 %% Linear Matrix Inequality Constraint Setup
+% Eq 6
+lmiterm([1 1 1 Q1]);
+lmiterm([-1 1 1 0], q1*eye(n));
+lmiterm([2 1 1 Q2]);
+lmiterm([-2 1 1 0], q2*eye(n));
+lmiterm([3 1 1 Q3]);
+lmiterm([-3 1 1 0], q3*eye(n));
+lmiterm([4 1 1 R1]);
+lmiterm([-4 1 1 0], r1*eye(n));
+lmiterm([5 1 1 R2]);
+lmiterm([-5 1 1 0], r2*eye(n));
+
 % Eq 7 [[(tau_M - tau_m)P_11^i, P_12];[*, P_22]] < diag{beta1 In, ... beta}
 % i = 1
-lmiterm([1 1 1 P111],(tau_M-tau_m),1);  % LHS (tau_M - tau_m)P_11^1
-lmiterm([1 1 2 P12], 1, 1);             % LHS P_12
-lmiterm([1 2 2 P22], 1, 1);             % LHS P_22
-lmiterm([-1 1 1 beta12], 1, 1);         % RHS diag{beta1 I_n, beta2 I_n}
-lmiterm([-1 2 2 beta34], 1, 1);         % RHS diag{beta3 I_n, beta4 I_n}
+lmiterm([6 1 1 P111],(tau_M-tau_m),1);  % LHS (tau_M - tau_m)P_11^1
+lmiterm([6 1 2 P12], 1, 1);             % LHS P_12
+lmiterm([6 2 2 P22], 1, 1);             % LHS P_22
+lmiterm([-6 1 1 0], beta12);         % RHS diag{beta1 I_n, beta2 I_n}
+lmiterm([-6 2 2 0], beta34);         % RHS diag{beta3 I_n, beta4 I_n}
 
 % Eq. 7 i = 2
-lmiterm([1 1 1 P112],(tau_M-tau_m),1);  % LHS (tau_M - tau_m)P_11^1
-lmiterm([1 1 2 P12], 1, 1);             % LHS P_12
-lmiterm([1 2 2 P22], 1, 1);             % LHS P_22
-lmiterm([-1 1 1 beta12], 1, 1);         % RHS diag{beta1 I_n, beta2 I_n}
-lmiterm([-1 2 2 beta34], 1, 1);         % RHS diag{beta3 I_n, beta4 I_n}
+lmiterm([7 1 1 P112],(tau_M-tau_m),1);  % LHS (tau_M - tau_m)P_11^1
+lmiterm([7 1 2 P12], 1, 1);             % LHS P_12
+lmiterm([7 2 2 P22], 1, 1);             % LHS P_22
+lmiterm([-7 1 1 0], beta12);            % RHS diag{beta1 I_n, beta2 I_n}
+lmiterm([-7 2 2 0], beta34, 1);         % RHS diag{beta3 I_n, beta4 I_n}
 
+% Eq 8 [I/beta0^2, zeros; zeros]< [[(tau_M - tau_m)P_11^i, P_12];[*, P_22]]
+% i = 1
+lmiterm([-8 1 1 P111], (tau_M - tau_m));
+lmiterm([-8 1 2 P12], 1);
+lmiterm([-8 2 2 P22], 1);
+lmiterm([8 1 1 0], ones(n)/(beta0^2));
+
+% i = 2
+lmiterm([-9 1 1 P112], (tau_M - tau_m));
+lmiterm([-9 1 2 P12], 1);
+lmiterm([-9 2 2 P22], 1);
+lmiterm([9 1 1 0], ones(n)/(beta0^2));
+
+% Eq 9
+lmiterm([-10 1 1 Theta], 1);
+
+% Eq 10. Sigma(tau, dtau) - alpha/omega^2 e8 e'_8 <0
+%     This one is long but from Lemma 4, one only needs to look at 4
+%     points. However it is long and tedius so I'll put it in a for loop.
+lmit_i = 10;  % current term index for keeping track
+for tau=[tau_m, tau_m]
+    for dtau=[d_m, d_M]
+        % Update which constrain term this is
+        lmit_i = lmit_i+1;
+
+        % He operator
+        lmiterm([lmit_i 1 1 P111],...
+            (tau_M - tau)*[e1, tau_m*e5],...
+            [Ac, e1-e3]','s');  % P111 term
+        lmiterm([lmit_i 1 1 P112],...
+            (tau - tau_m)*[e1, tau_m*e5],...
+            [Ac, e1-e3]','s');  % P112 term
+        lmiterm([lmit_i 1 1 -P12],...
+            (tau - tau_m)*[e1, tau_m*e5],...
+            [Ac, e1-e3]','s');  % P12^T term
+        lmiterm([lmit_i 1 1 P22],...
+            [(tau - tau_m)*e6, (tau_M - tau)*e7],...
+            [e3 - (1-dtau)*e2, (1-dtau)*e2 - e4]', 's');  % P12 term
+        lmiterm([lmit_i 1 1 P22],...
+            [(tau - tau_m)*e6, (tau_M - tau)*e7],...
+            [e3 - (1-dtau)*e2, (1-dtau)*e2 - e4]', 's');  % P22 term
+
+        % (dt[-P^1_11 + P^2_11] + alpha P) term
+        % P11 terms
+        lmiterm([lmit_i 1 1 P111], -[e1, tau_m*e5], [e1, tau_m*e5]');
+        lmiterm([lmit_i 1 1 P112], [e1, tau_m*e5], [e1, tau_m*e5]');
+        lmiterm([lmit_i 1 1 P111], -[e1, tau_m*e5], [e1, tau_m*e5]');
+        lmiterm([lmit_i 1 1 P111],...
+            alpha*(tau_M - tau)*[e1, tau_m*e5], [e1, tau_m*e5]');
+        lmiterm([lmit_i 1 1 P112],...
+            alpha*(tau - tau_m)*[e1, tau_m*e5], [e1, tau_m*e5]');
+        % P12 terms
+        lmiterm([lmit_1 1 1 -P12],...
+            alpha*[e1, tau_m*e5],...
+            [(tau - tau_m)*e6, (tau_M - tau)*e7]', 's');
+        % P22 terms
+        lmiterm([lmit_i 1 1 P22],...
+            [(tau - tau_m)*e6, (tau_M - tau)*e7],...
+            [(tau - tau_m)*e6, (tau_M - tau)*e7]');
+
+        % e_1(Q1 + Q2 + Q3)e_1^T
+        lmiterm([lmit_i 1 1 Q1], e1, e1');
+        lmiterm([lmit_i 1 1 Q2], e1, e1');
+        lmiterm([lmit_i 1 1 Q3], e1, e1');
+
+        % e3 Q1 e^{-alpha t_m} e3^T
+        lmiterm([lmit_i 1 1 Q1], -exp(-alpha*tau_m)*e3, e3');
+
+        % e2 Q2 e^{-alpha t_M} e2^T
+        lmiterm([lmit_i 1 1 Q2], -(1-dtau)*exp(-alpha*tau_M)*e2, e2');
+
+        % e4 Q3 e^{-alpha t_M} e4^T
+        lmiterm([lmit_i 1 1 Q3], -exp(-alpha*tau_M)*e4, e4');
+
+        % Ac[tau_m^2 R1 + (tau_M - tau_m)^2 R2 Ac
+        lmiterm([lmit_i 1 1 R1], (tau_m^2)*Ac, Ac');
+        lmiterm([lmit_i 1 1 R2], ((tau_M - tau_m)^2)*Ac, Ac');
+
+        % e^{-alpha tau_m} Gamma_1 Rtilde_1 Gamma_1^T
+        lmiterm([lmit_i 1 1 R1tilde] -exp(-alpha*tau_m)*Gamma_1, Gamma_1');
+
+        % e^{-alpha tau_M} Gamma_2 Theta Gamma_2^T
+        lmiterm([lmit_i 1 1 Theta] -exp(-alpha*tau_M)*Gamma_2, Gamma_2');
+
+        % Constant term (alpha/omega^2*e8 e8^T)
+        lmiterm([lmit_i 1 1 0], alpha/(omega_scalar^2)*e8, e8');
+    end
+end
+end
+
+%% Constrain function
 % Eq 11.
-
-%% Linear Matrix Inequality Solving
-% TODO: use gevp from MATLAB's robust control toolbox.
-
-
+function [value] = kellipse(alpha, beta1, beta2, beta3, beta4, q1, q2, q3, r1, r2)
+    K1 = beta1 + (tau_m^2)*beta2 + ((tau_M - tau_m)^2)*(beta3 + beta4) +...
+        (q1*(1-exp(-alpha*tau_m)) + (q2+q3)*(1-exp(-alpha*tau_M)))/alpha;
+    K2 = (r1*tau_m*(tau_m*alpha + exp(-alpha*tau_m) - 1) + ...
+        r2*(tau_M - tau_m)*((tau_M - tau_m)*alpha +...
+        exp(-alpha*tau_M) - exp(-alpha*tau_m)))/(alpha^2);
+    value = K1*mu0^2 + K2*mu^2;
 end
 
-%% Auxiliary functions
-function xprime = He(x)
-    xprime = (x + x')/2;
-end
-
+%% Auxiliary Functions
 function ei = ei_generator(n, p, i)
     if i < 8
         ei = [zeros(n, (i-1)*n), eye(n), zeros(n, (7-i)*n + p)];
