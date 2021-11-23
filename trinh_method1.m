@@ -290,12 +290,12 @@ mu0 = min(eig(E));
     % Get the LMI problem and solve
     lmisys = getlmis;
     [tmin, ~] = feasp(lmisys);
-    epsilon = 1e-2;  % Acceptable tolerance for LMI solving 
+    epsilon = 0;  % Acceptable tolerance for LMI solving 
     if tmin < epsilon
         beta0_or_inf = beta0;
     else
         % beta0_or_inf = inf
-        beta0_or_inf = beta0*(1 + tmin);
+        beta0_or_inf = beta0*exp(tmin);
     end
     end
 

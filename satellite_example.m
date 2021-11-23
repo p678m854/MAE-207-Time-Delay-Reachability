@@ -41,7 +41,7 @@ Ad = [      0,         0,         0,         0;
 B = [0; 0; 1; 0];
 
 % Initial conditions
-E = 10*eye(2);  % Inital bound
+E = 100*eye(2);  % Inital bound
 
 % Delay and Noise parameters
 tau_m        =  0.2;  % Minimum time delay

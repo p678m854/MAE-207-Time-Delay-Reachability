@@ -51,3 +51,14 @@ Ad = [  0,     0;
 
 % Disturbance matrix
 B = [0; 1/(m*l*l)];
+
+% Initial conditions
+E = pi/18.*eye(1);  % Inital bound
+
+% Delay and Noise parameters
+tau_m        =  0;  % Minimum time delay
+tau_M        =  0.1;  % Maximum time delay
+d_m          = -5.0;  % Minimum delay change rate
+d_M          =  0.1;  % Maximum delay change rate
+mu_scalar    =  0.5;  % Norm bound on derivative of initial condition function
+omega_scalar =  0.2;  % Norm bound on input disturbance
