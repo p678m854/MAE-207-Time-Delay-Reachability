@@ -39,6 +39,11 @@ function q = nam_method(A,Ak,B,omega_bar)
 %        The smallest bound", P.T. Nam, Pubudu N. Pathirana, and H. Trihn, 
 %        November 2014.
 
+if length(size(Ak)) == 2
+    temp = zeros(size(A, 1), size(A, 2), 1);
+    temp(:,:,1) = Ak;
+    Ak = temp;
+end
 
 sumA = A;
 for k=1:size(Ak,3)

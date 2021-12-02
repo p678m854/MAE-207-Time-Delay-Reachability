@@ -47,10 +47,15 @@ Jzz = 6.9e-2;       % Inertia around z-axis [kg*m^2]
 kT = 2.269e-8;      % Rotor thrust coefficient [N/rpm^2]
 kQ = 0.05*kT;        % Rotor torque coefficient [N*m/rpm^2](UNKNOWN)
 
+% Artificial dampening 
+kl = 1;     % [1/s]
+km = 2;     % [1/s]
+kn = 0.01;  % [1/s]
+
 % Nominal States (all zero for hover condition)
 % State matrix
 A = [zeros(3),   eye(3);...  % d/dt(Theta)
-     zeros(3), zeros(3)];    % d/dt(Omega)
+     zeros(3), -[kl, 0, 0; 0, km, 0; 0, 0, kn]];    % d/dt(Omega)
 
 % Control Matrix
 B = [zeros(3,4);...                % Angular integrator
@@ -62,4 +67,15 @@ B = [zeros(3,4);...                % Angular integrator
 simplesys = ss(A(4:end, 4:end), B(4:end,:), eye(3), zeros(3,4));
 [K,~,~] = lqi(simplesys, [125*eye(3), zeros(3); zeros(3), 200*eye(3)], eye(4),zeros(6,4));
 K = [K(:,4:end), K(:,1:3)];
-disp(eig(A - B*K));
+Ad = B*K;
+
+% Initial conditions
+E = pi/12.*eye(1);  % Inital bound
+
+% Delay and Noise parameters
+tau_m        =  0.05;  % Minimum time delay
+tau_M        =  0.15;  % Maximum time delay
+d_m          = -100.0;  % Minimum delay change rate
+d_M          =  0.1;   % Maximum delay change rate
+mu_scalar    =  0.25;  % Norm bound on derivative of initial condition function
+omega_scalar =  0.1;   % Norm bound on input disturbance

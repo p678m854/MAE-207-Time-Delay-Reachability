@@ -32,6 +32,11 @@ kdz = 0.231/0.915;  % linear drag coefficient for z axis [Ns/m]
 kT = 2.269e-8;      % Rotor thrust coefficient [N/rpm^2]
 kQ = 0.05*kT;        % Rotor torque coefficient [N*m/rpm^2](UNKNOWN)
 
+% Artificial dampening 
+kl = 1;     % [1/s]
+km = 2;     % [1/s]
+kn = 0.01;  % [1/s]
+
 % Nominal States
 P = 0;      % Roll rate   [rad/s]
 Q = 0;      % Pitch rate  [rad/s]
@@ -43,13 +48,13 @@ Phi = 0;    % Roll angle  [rad]
 Theta = 0;  % Pitch angle [rad]
 
 % State matrix [-sT; cTsP; cTcP]
-A22 = [kdx, 0, 0; 0, kdy, 0; 0, 0, kdz]/m + ...  % Drag component
+A22 = -[kdx, 0, 0; 0, kdy, 0; 0, 0, kdz]/m + ...  % Drag component
       [0, R, -Q; -R, 0, P; Q, -P, 0];  % Rotational frame component
 A23 = g*[                   0,          -cos(Theta), 0;...
           cos(Theta)*cos(Phi), -sin(Theta)*sin(Phi), 0;...
          -cos(Theta)*sin(Phi), -sin(Theta)*cos(Phi), 0];
 A34 = [0, -W, V; W, 0, -U; -V, U, 0];  % Rotational frame component
-A42 = zeros(3);  % Currently no pitching due to motion parameters.
+A42 = -[kl, 0, 0; 0, km, 0; 0, 0, kn];  % Artificially included for stability.
 A44 = [                0, R*(Jyy - Jzz)/Jxx, Q*(Jyy - Jzz)/Jxx;...
        R*(Jzz - Jxx)/Jyy,                 0, P*(Jzz - Jxx)/Jyy;...
        Q*(Jxx - Jyy)/Jzz, P*(Jxx - Jyy)/Jzz,                 0];
@@ -70,7 +75,7 @@ B = [zeros(3,4);...                % Linear integrator
      kQ/Jzz*[-1, 1, -1, 1]];       % ddpsi
 
 % Delay matrix
-[K, ~, ~] = lqr(A(10:end,10:end), B(10:end,:), 2*ones(3), ones(4));
+[K, ~, ~] = lqr(A, B, 2*ones(12), ones(4), zeros(12,4));
 % xvec = [x, y, z, vx, vy, vz, phi, theta, psi, omegax, omegay, omegaz]
 % kp = 0.5;
 % kv = -0.5;

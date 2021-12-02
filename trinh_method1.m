@@ -292,10 +292,12 @@ mu0 = min(eig(E));
     [tmin, ~] = feasp(lmisys);
     epsilon = 0;  % Acceptable tolerance for LMI solving 
     if tmin < epsilon
-        beta0_or_inf = beta0;
+        % beta0_or_inf = beta0;
+        beta0_or_inf = -1/beta0;
     else
         % beta0_or_inf = inf
-        beta0_or_inf = beta0*exp(tmin);
+        % beta0_or_inf = beta0*exp(tmin);
+        beta0_or_inf = tmin;
     end
     end
 
@@ -310,7 +312,7 @@ paramprob = optimproblem(...
 
 % Initial optimization guess
 reA = real(eig(A));
-alpha0 = max(reA(reA < 0));   % Largest negative eigenvalue
+alpha0 = -max(reA(reA < 0));   % Largest negative eigenvalue
 beta0 = (max(eig(E)))^(0.5);  % radius associated largest orthogonal diagonal.
 
 x0.x = [alpha0, beta0];  % Decay rate (alpha) guess

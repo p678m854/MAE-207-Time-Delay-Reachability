@@ -38,12 +38,12 @@ g = 9.81;    % [m/s^2]
 k = 0.1;     % [kg*m/s]
 
 % PD controller where error is e = theta - theta0
-kp = -0.1;
-kd = -0.2;
+kp = 0.1;
+kd = 0.2;
 
 % State Transition Matrix
 A = [              0,  1;
-     g/l*cos(theta0), -k];
+     -g/l*cos(theta0), -k];
 
 % State delay contribution
 Ad = [  0,     0;
@@ -53,12 +53,12 @@ Ad = [  0,     0;
 B = [0; 1/(m*l*l)];
 
 % Initial conditions
-E = pi/18.*eye(1);  % Inital bound
+E = pi/36.*eye(1);  % Inital bound
 
 % Delay and Noise parameters
 tau_m        =  0;  % Minimum time delay
 tau_M        =  0.1;  % Maximum time delay
-d_m          = -5.0;  % Minimum delay change rate
+d_m          = -100.0;  % Minimum delay change rate
 d_M          =  0.1;  % Maximum delay change rate
-mu_scalar    =  0.5;  % Norm bound on derivative of initial condition function
-omega_scalar =  0.2;  % Norm bound on input disturbance
+mu_scalar    =  0.25;  % Norm bound on derivative of initial condition function
+omega_scalar =  0.1;  % Norm bound on input disturbance

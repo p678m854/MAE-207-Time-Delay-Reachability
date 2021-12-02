@@ -53,10 +53,13 @@ switch method
       sol = beta0;                                  
    case 'fridman_method1'
       disp('Method: FRIDMAN_METHOD1 is selected');
-      [P, F, delta]= fridman_method1(A, Ad, B, ...
-                            tau_M, sqrt(omega_scalar)...
+      [P, ~, ~]= fridman_method1(A, Ad, B, ...
+                            tau_M, omega_scalar...
                             );
       sol = P;
+    case 'nam_method'
+        disp('Method: NAM_METHOD is selected')
+        sol = nam_method(A,Ad,B,omega_scalar);
    otherwise
       disp('Error! No method selected!')
 end

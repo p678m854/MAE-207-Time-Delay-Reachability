@@ -8,13 +8,13 @@
 % Options:
 %     - 2D usecase: pendulum_example
 %     - 4D usecase: satellite_example
-%     - 9D usecase: simple_quadcopter_example
+%     - 6D usecase: simple_quadcopter_example
 %     - 12D usecase: quadcopter_example
 % Additional Options for code verification:
 %     - 2D usecase: fridman_example
 % Uncomment to select the usecase:
 
-% usecase = 'pendulum_example';
+usecase = 'pendulum_example';
 % usecase = 'satellite_example';
 % usecase = 'simple_quadcopter_example';
 % usecase = 'quadcopter_example';
@@ -30,6 +30,7 @@
 
 % method = 'trinh_method1';
 method = 'fridman_method1';
+% method = 'nam_method'
 
 %% Execution
 %
